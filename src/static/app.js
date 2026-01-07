@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p><strong>Max Participants:</strong> ${details.max_participants}</p>
                     <p><strong>Current Participants:</strong></p>
                     <ul class="participants">
-                        ${details.participants.map(email => `<li>${email}</li>`).join('')}
+                        ${details.participants.map(email => `<li>${email} <button class="delete-participant" data-email="${email}" data-activity="${name}">×</button></li>`).join('')}
                     </ul>
                 `;
                 activitiesList.appendChild(card);
@@ -45,6 +45,30 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching activities:', error);
             activitiesList.innerHTML = '<p>Error loading activities.</p>';
         });
+
+    // Add event listeners for delete buttons
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('delete-participant')) {
+            const email = e.target.dataset.email;
+            const activity = e.target.dataset.activity;
+            fetch(`/activities/${encodeURIComponent(activity)}/participants/${encodeURIComponent(email)}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                messageDiv.className = 'message success';
+                messageDiv.textContent = data.message;
+                messageDiv.classList.remove('hidden');
+                // Remove the li
+                e.target.parentElement.remove();
+            })
+            .catch(error => {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = error.detail || 'An error occurred.';
+                messageDiv.classList.remove('hidden');
+            });
+        }
+    });
 
     // Handle signup form submission
     signupForm.addEventListener('submit', (e) => {
@@ -67,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (card) {
                 const ul = card.querySelector('.participants');
                 const li = document.createElement('li');
-                li.textContent = email;
+                li.innerHTML = `${email} <button class="delete-participant" data-email="${email}" data-activity="${activity}">×</button>`;
                 ul.appendChild(li);
             }
         })
